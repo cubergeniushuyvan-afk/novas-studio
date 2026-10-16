@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="vi" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novas Studio — Nâng Tầm Bài Thuyết Trình Của Bạn</title>
+    <!-- Tailwind CSS & FontAwesome -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
+                    colors: {
+                        brand: {
+                            50: '#f0f3ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #f8fafc; color: #0f172a; overflow-x: hidden; }
+        
+        /* Custom Cursor (Ẩn trên thiết bị di động) */
+        .cursor-dot, .cursor-outline {
+            position: fixed; top: 0; left: 0;
+            transform: translate(-50%, -50%);
+            border-radius: 50%; pointer-events: none; z-index: 9999;
+            transition: width 0.2s, height 0.2s;
+        }
+        .cursor-dot { width: 8px; height: 8px; background-color: #4f46e5; }
+        .cursor-outline { width: 36px; height: 36px; border: 2px solid rgba(79, 70, 229, 0.4); background: rgba(79, 70, 229, 0.05); }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            box-shadow: 0 20px 40px -15px rgba(99, 102, 241, 0.08);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .glass-card:hover {
+            box-shadow: 0 25px 50px -12px rgba(79, 70, 229, 0.18);
+            border-color: rgba(99, 102, 241, 0.4);
+        }
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #db2777 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Hiệu ứng Scroll Reveal Đỉnh Cao */
+        .reveal-element {
+            opacity: 0;
+            transform: translateY(35px) scale(0.96);
+            transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .reveal-element.active {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        /* Hiệu ứng Pop-in Mở/Đóng Modal Admin 3D Zoom */
+        .modal-backdrop {
+            transition: opacity 0.35s ease, visibility 0.35s ease;
+        }
+        .modal-content {
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.35s ease;
+        }
+        .modal-backdrop.hidden-modal {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        .modal-backdrop.hidden-modal .modal-content {
+            transform: scale(0.75) translateY(30px) rotateX(10deg);
+            opacity: 0;
+        }
+        .modal-backdrop.show-modal {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+        .modal-backdrop.show-modal .modal-content {
+            transform: scale(1) translateY(0) rotateX(0deg);
+            opacity: 1;
+        }
+
+        #particle-canvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0;
+        }
+        
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.6); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 16px rgba(79, 70, 229, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
+        }
+        .pulse-btn { animation: pulse-ring 2.5s infinite; }
+    </style>
+</head>
+<body class="relative min-h-screen selection:bg-indigo-500 selection:text-white">
+
+    <!-- Custom Cursor -->
+    <div class="cursor-dot hidden md:block" id="cursor-dot"></div>
+    <div class="cursor-outline hidden md:block" id="cursor-outline"></div>
+
+    <!-- Canvas Hạt Sáng Nền -->
+    <canvas id="particle-canvas"></canvas>
+
+    <!-- Navigation Bar -->
+    <nav class="glass-nav fixed top-0 left-0 right-0 z-50 py-3.5 px-4 md:px-12 flex justify-between items-center">
+        <div class="flex items-center space-x-2.5 cursor-pointer" onclick="window.scrollTo({top:0, behavior:'smooth'})">
+            <div class="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white font-black text-lg md:text-xl shadow-md shadow-indigo-200">
+                N
+            </div>
+            <span class="text-lg md:text-xl font-extrabold tracking-tight text-slate-800">NOVAS <span class="text-indigo-600">STUDIO</span></span>
+        </div>
+        
+        <div class="hidden md:flex items-center space-x-8 font-semibold text-slate-600 text-sm">
+            <a href="#about" class="hover:text-indigo-600 transition">Kinh Nghiệm</a>
+            <a href="#calculator" class="hover:text-indigo-600 transition">Bảng Tính Giá</a>
+            <a href="#pricing" class="hover:text-indigo-600 transition">Bảng Giá</a>
+            <a href="#order" class="hover:text-indigo-600 transition">Đặt Bài</a>
+        </div>
+
+        <div class="flex items-center space-x-2">
+            <a href="https://zalo.me/0399641646?text=Chào%20Novas%20Studio,%20mình%20muốn%20tư%20vấn%20làm%20slide%20PowerPoint..." target="_blank" class="px-3 py-2 md:px-4 md:py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs md:text-sm transition flex items-center space-x-1.5 shadow-md shadow-indigo-200">
+                <i class="fa-solid fa-comments"></i>
+                <span>Chat Zalo</span>
+            </a>
+            <a href="https://www.facebook.com/share/1N6gTxJ4fJ/?mibextid=wwXIfr" target="_blank" class="px-3 py-2 md:px-3.5 md:py-2.5 rounded-xl bg-blue-50 text-blue-600 font-bold text-xs md:text-sm hover:bg-blue-100 transition flex items-center space-x-1">
+                <i class="fa-brands fa-facebook"></i>
+                <span class="hidden sm:inline">Facebook</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Nút Chat Cố Định Góc Màn Hình -->
+    <div class="fixed bottom-5 right-5 z-40 flex flex-col space-y-3">
+        <a href="https://zalo.me/0399641646?text=Chào%20Novas%20Studio,%20mình%20muốn%20tư%20vấn%20làm%20slide%20PowerPoint..." target="_blank" class="pulse-btn w-12 h-12 md:w-14 md:h-14 bg-indigo-600 rounded-full text-white flex items-center justify-center text-xl md:text-2xl shadow-xl hover:scale-110 transition group relative" title="Nhắn Zalo">
+            <i class="fa-solid fa-phone"></i>
+            <span class="absolute right-16 top-2 bg-slate-900 text-white text-xs font-bold px-3 py-1.5 rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition duration-200 shadow-xl hidden md:block">Chat Zalo 24/7</span>
+        </a>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="relative z-10 pt-28 md:pt-36 pb-16 px-4 md:px-12 max-w-7xl mx-auto text-center reveal-element">
+        <div class="inline-flex items-center space-x-2 px-3.5 py-1.5 md:px-4 md:py-2 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 font-bold text-[11px] md:text-xs uppercase tracking-wider mb-6">
+            <i class="fa-solid fa-circle-check"></i>
+            <span>Dịch Vụ Thiết Kế Slide Uy Tín - Xem Demo Trước</span>
+        </div>
+        
+        <h1 class="text-3xl sm:text-5xl md:text-6xl font-black text-slate-900 leading-tight mb-5 tracking-tight">
+            Nâng Tầm Bài Thuyết Trình Với <br class="hidden sm:block"/>
+            <span class="gradient-text">Slide PowerPoint Chuyên Nghiệp</span>
+        </h1>
+        
+        <p class="text-slate-600 text-sm md:text-lg max-w-2xl mx-auto mb-8 font-medium leading-relaxed">
+            Hỗ trợ học sinh, giáo viên và đội nhóm thiết kế slide chỉn chu, đúng trọng tâm bài học, bố cục hiện đại và giao đúng hẹn.
+        </p>
+
+        <div class="flex flex-col sm:flex-row justify-center items-center gap-3.5 mb-8">
+            <a href="#order" class="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm md:text-base shadow-lg shadow-indigo-200 transition flex items-center justify-center space-x-2">
+                <span>Điền Thông Tin Đặt Bài</span>
+                <i class="fa-solid fa-arrow-right"></i>
+            </a>
+            <a href="https://zalo.me/0399641646" target="_blank" class="w-full sm:w-auto px-7 py-3.5 rounded-2xl glass-card text-slate-700 font-bold text-sm md:text-base hover:bg-white transition flex items-center justify-center space-x-2">
+                <i class="fa-solid fa-comments text-indigo-600"></i>
+                <span>Tư Vấn Trực Tiếp Zalo/FB</span>
+            </a>
+        </div>
+    </section>
+
+    <!-- Mục Kinh Nghiệm & Đối Tượng Phục Vụ -->
+    <section id="about" class="relative z-10 py-12 md:py-16 px-4 md:px-12 max-w-6xl mx-auto reveal-element">
+        <div class="text-center mb-10">
+            <span class="text-[11px] md:text-xs font-extrabold text-indigo-600 uppercase tracking-widest bg-indigo-50 px-3 py-1 rounded-full">Kinh Nghiệm &amp; Đối Tượng</span>
+            <h2 class="text-2xl md:text-3xl font-extrabold text-slate-900 mt-2.5">Novas Studio Phục Vụ Ai?</h2>
+            <p class="text-slate-500 text-xs md:text-sm mt-1">Đồng hành cùng bài thuyết trình đạt điểm cao của bạn</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+            <div class="glass-card p-6 md:p-8 rounded-3xl">
+                <div class="w-11 h-11 md:w-12 md:h-12 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-lg md:text-xl font-bold mb-5">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                </div>
+                <h3 class="text-base md:text-lg font-bold text-slate-800 mb-2">Học Sinh Trung Học</h3>
+                <p class="text-slate-500 text-xs leading-relaxed">Am hiểu sâu chương trình học các môn Văn, Lịch Sử, Địa Lý, Toán, STEM. Bố cục ngắn gọn, hình ảnh minh họa đúng nội dung sách giáo khoa.</p>
+            </div>
+
+            <div class="glass-card p-6 md:p-8 rounded-3xl">
+                <div class="w-11 h-11 md:w-12 md:h-12 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center text-lg md:text-xl font-bold mb-5">
+                    <i class="fa-solid fa-chalkboard-user"></i>
+                </div>
+                <h3 class="text-base md:text-lg font-bold text-slate-800 mb-2">Giáo Viên &amp; Trợ Giảng</h3>
+                <p class="text-slate-500 text-xs leading-relaxed">Thiết kế bài giảng điện tử chuẩn sư phạm, màu sắc nhẹ nhàng, dễ truyền tải kiến thức, có sơ đồ tư duy &amp; trò chơi tương tác.</p>
+            </div>
+
+            <div class="glass-card p-6 md:p-8 rounded-3xl">
+                <div class="w-11 h-11 md:w-12 md:h-12 rounded-2xl bg-pink-100 text-pink-600 flex items-center justify-center text-lg md:text-xl font-bold mb-5">
+                    <i class="fa-solid fa-users shadow-sm"></i>
+                </div>
+                <h3 class="text-base md:text-lg font-bold text-slate-800 mb-2">Báo Cáo Nhóm &amp; Thi Đấu</h3>
+                <p class="text-slate-500 text-xs leading-relaxed">Kinh nghiệm hoàn thiện slide cho các cuộc thi, thuyết trình dự án nhóm. Slide ấn tượng, hỗ trợ căn chỉnh layout chuẩn chỉ.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Bảng Tính Giá Ước Tính -->
+    <section id="calculator" class="relative z-10 py-10 md:py-12 px-4 md:px-12 max-w-4xl mx-auto reveal-element">
+        <div class="glass-card p-6 md:p-8 rounded-3xl border border-indigo-100">
+            <div class="text-center mb-6">
+                <h2 class="text-xl md:text-2xl font-extrabold text-slate-900">Bảng Tính Chi Phí Ước Tính</h2>
+                <p class="text-slate-500 text-xs mt-1">Chọn gói dịch vụ để giới hạn số slide chính xác</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-slate-700 font-bold text-xs mb-2">1. Chọn gói dịch vụ</label>
+                        <select id="calcPkg" onchange="onPkgChange()" class="w-full px-4 py-3 rounded-xl border border-slate-200 font-bold text-slate-800 focus:outline-none focus:border-indigo-500 text-xs md:text-sm">
+                            <option value="20000">Gói CƠ BẢN (Tối đa 20 Slide)</option>
+                            <option value="45000">Gói CHUYÊN NGHIỆP (Tối đa 40 Slide)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-700 font-bold text-xs mb-2">2. Số lượng Slide: <span id="slideVal" class="text-indigo-600 font-black text-base">15</span> slide</label>
+                        <input type="range" id="slideRange" min="5" max="20" value="15" oninput="calculatePrice()" class="w-full accent-indigo-600 cursor-pointer h-2 bg-slate-200 rounded-lg">
+                        <div class="flex justify-between text-[10px] text-slate-400 font-bold mt-1">
+                            <span>5 slide</span>
+                            <span id="maxSlideLabel">Tối đa 20 slide</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-indigo-50/60 p-5 md:p-6 rounded-2xl border border-indigo-100 text-center">
+                    <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Chi Phí Trọn Bài Dự Kiến</p>
+                    <div id="totalPrice" class="text-3xl md:text-4xl font-black text-indigo-600 mb-2">20.000 VNĐ</div>
+                    <p class="text-[11px] text-slate-500">Thời gian hoàn thiện: <strong class="text-slate-700">Trong vòng 24 giờ</strong></p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Bảng Giá Dịch Vụ -->
+    <section id="pricing" class="relative z-10 py-12 md:py-16 px-4 md:px-12 max-w-5xl mx-auto reveal-element">
+        <div class="text-center mb-10">
+            <h2 class="text-2xl md:text-3xl font-extrabold text-slate-900">Bảng Giá Dịch Vụ Nhanh Gọn</h2>
+            <p class="text-slate-500 text-xs md:text-sm mt-1">Mức giá hợp lý cho học sinh &amp; giáo viên</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 items-stretch">
+            <!-- Gói Cơ Bản -->
+            <div class="glass-card p-6 md:p-8 rounded-3xl relative border-2 border-indigo-500 flex flex-col justify-between">
+                <div>
+                    <h3 class="text-lg md:text-xl font-extrabold text-slate-800 mb-1">Gói CƠ BẢN</h3>
+                    <p class="text-slate-500 text-xs mb-5">Phù hợp báo cáo bài học &amp; thuyết trình môn học</p>
+                    <div class="text-3xl font-black text-indigo-600 mb-5">20.000 <span class="text-xs font-bold text-slate-400">VNĐ / bài</span></div>
+                    
+                    <ul class="space-y-3 text-xs font-semibold text-slate-600 mb-6 md:mb-8">
+                        <li class="flex items-center space-x-2.5">
+                            <i class="fa-solid fa-circle-check text-indigo-500"></i>
+                            <span>Tối đa <strong>20 Slide / 1 bài</strong></span>
+                        </li>
+                        <li class="flex items-center space-x-2.5">
+                            <i class="fa-solid fa-circle-check text-indigo-500"></i>
+                            <span>Hình ảnh minh họa đúng nội dung thực tế</span>
+                        </li>
+                        <li class="flex items-center space-x-2.5">
+                            <i class="fa-solid fa-circle-check text-indigo-500"></i>
+                            <span>Hiệu ứng chuyển cảnh &amp; animation mượt mà</span>
+                        </li>
+                        <li class="flex items-center space-x-2.5">
+                            <i class="fa-solid fa-circle-check text-indigo-500"></i>
+                            <span>Bàn giao trong vòng <strong>24h</strong></span>
+                        </li>
+                    </ul>
+                </div>
+                <a href="#order" onclick="selectPackage('Gói CƠ BẢN (20.000 VNĐ)')" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-center text-xs transition block">
+                    Chọn Gói Cơ Bản
+                </a>
+            </div>
+
+            <!-- Gói Chuyên Nghiệp -->
+            <div class="glass-card p-6 md:p-8 rounded-3xl flex flex-col justify-between">
+                <div>
+                    <h3 class="text-lg md:text-xl font-extrabold text-slate-800 mb-1">Gói CHUYÊN NGHIỆP</h3>
+                    <p class="text-slate-500 text-xs mb-5">Dành cho bài thi lớn, bảo vệ đề tài hoặc giáo án điện tử</p>
+                    <div class="text-3xl font-black text-purple-600 mb-5">45.000 <span class="text-xs font-bold text-slate-400">VNĐ / bài</span></div>
+                    
+                    <ul class="space-y-3 text-xs font-semibold text-slate-600 mb-6 md:mb-8">
+                        <li class="flex items-center space-x-2.5">
+                            <i class="fa-solid fa-circle-check text-purple-500"></i>
+                            <span>Tối đa <strong>40 Slide / 1 bài</strong></span>
+                        </li>
+                        <li class="flex items-center space-x-2.5">
+                            <i class="fa-solid fa-circle-check text-purple-500"></i>
+                            <span>Layout thiết kế độc quyền chỉn chu</span>
+                        </li>
+                        <li class="flex items-center space-x-2.5">
+                            <i class="fa-solid fa-circle-check text-purple-500"></i>
+                            <span>Tích hợp minigame &amp; sơ đồ tương tác</span>
+                        </li>
+                        <li class="flex items-center space-x-2.5">
+                            <i class="fa-solid fa-circle-check text-purple-500"></i>
+                            <span>Chỉnh sửa không giới hạn + Hỗ trợ 24/7</span>
+                        </li>
+                    </ul>
+                </div>
+                <a href="#order" onclick="selectPackage('Gói CHUYÊN NGHIỆP (45.000 VNĐ)')" class="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-center text-xs transition block">
+                    Chọn Gói Chuyên Nghiệp
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Form Đặt Hàng Trực Tiếp -->
+    <section id="order" class="relative z-10 py-12 md:py-16 px-4 md:px-12 max-w-3xl mx-auto reveal-element">
+        <div class="glass-card p-6 md:p-10 rounded-3xl shadow-xl">
+            <div class="text-center mb-6 md:mb-8">
+                <h2 class="text-xl md:text-2xl font-extrabold text-slate-900">Liên Hệ Đặt Bài Trực Tiếp</h2>
+                <p class="text-slate-500 text-xs mt-1">
+                    Điền thông tin bên dưới để Novas Studio liên hệ lại trong vòng <strong class="text-indigo-600">6 tiếng</strong>
+                </p>
+            </div>
+
+            <form id="orderForm" onsubmit="handleOrderSubmit(event)" class="space-y-4 md:space-y-5">
+                <div>
+                    <label class="block text-slate-700 font-bold text-xs mb-1.5">Họ &amp; Tên Của Bạn</label>
+                    <input type="text" id="custName" required placeholder="Ví dụ: Nguyễn Văn A" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-indigo-500 font-medium text-slate-800 text-xs md:text-sm">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
+                    <div>
+                        <label class="block text-slate-700 font-bold text-xs mb-1.5">Số Điện Thoại / Zalo</label>
+                        <input type="text" id="custPhone" required placeholder="Nhập SĐT của bạn" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-indigo-500 font-medium text-slate-800 text-xs md:text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-slate-700 font-bold text-xs mb-1.5">Nhóm Tuổi (Để tiện xưng hô)</label>
+                        <select id="custAgeGroup" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-indigo-500 font-semibold text-slate-800 text-xs md:text-sm">
+                            <option value="Dưới 16 tuổi">Dưới 16 tuổi (Học sinh THCS)</option>
+                            <option value="Từ 16 tuổi trở lên">Từ 16 tuổi trở lên (THPT / Giáo viên / Khác)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-slate-700 font-bold text-xs mb-1.5">Chọn Gói Dịch Vụ</label>
+                    <select id="custPkg" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-indigo-500 font-semibold text-slate-800 text-xs md:text-sm">
+                        <option value="Gói CƠ BẢN (20.000 VNĐ)">Gói CƠ BẢN - 20.000 VNĐ</option>
+                        <option value="Gói CHUYÊN NGHIỆP (45.000 VNĐ)">Gói CHUYÊN NGHIỆP - 45.000 VNĐ</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-slate-700 font-bold text-xs mb-1.5">Mô Tả Bài Làm &amp; Yêu Cầu</label>
+                    <textarea id="custNote" rows="3" required placeholder="Ví dụ: Slide Lịch Sử bài 12, khoảng 15 slide, gam màu tươi sáng, bàn giao tối mai..." class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-indigo-500 font-medium text-slate-800 text-xs md:text-sm"></textarea>
+                </div>
+
+                <button type="submit" id="submitBtn" class="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs md:text-sm shadow-md shadow-indigo-200 transition flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-paper-plane"></i>
+                    <span>Gửi Yêu Cầu Đặt Bài</span>
+                </button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="relative z-10 py-6 md:py-8 border-t border-slate-200 text-center text-slate-400 font-semibold text-xs">
+        <p>&copy; 2026 Novas Studio. All rights reserved. Hotline/Zalo: 0399.641.646</p>
+    </footer>
+
+    <!-- Cửa Sổ Admin Dashboard Mở Bằng Serverless API -->
+    <div id="adminModal" class="modal-backdrop hidden-modal fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="modal-content glass-card bg-white p-5 md:p-8 rounded-3xl max-w-2xl w-full max-h-[85vh] overflow-y-auto relative border border-slate-200 shadow-2xl">
+            <button onclick="closeAdminModal()" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+            
+            <div class="flex items-center space-x-3 mb-5 pb-4 border-b border-slate-100">
+                <div class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center text-lg font-bold"><i class="fa-solid fa-user-shield"></i></div>
+                <div>
+                    <h3 class="text-lg md:text-xl font-extrabold text-slate-800">Bảng Điều Khiển Admin</h3>
+                    <p class="text-xs text-slate-400">Danh sách đơn hàng toàn hệ thống (Vercel KV)</p>
+                </div>
+            </div>
+
+            <div id="ordersList" class="space-y-3 text-xs">
+                <!-- Đơn hàng tải từ Vercel Server sẽ được thêm vào đây -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Logic Tích Hợp Vercel API -->
+    <script>
+        // Custom Cursor
+        const cursorDot = document.getElementById('cursor-dot');
+        const cursorOutline = document.getElementById('cursor-outline');
+
+        window.addEventListener('mousemove', (e) => {
+            if(cursorDot && cursorOutline) {
+                cursorDot.style.left = `${e.clientX}px`;
+                cursorDot.style.top = `${e.clientY}px`;
+                cursorOutline.animate({ left: `${e.clientX}px`, top: `${e.clientY}px` }, { duration: 400, fill: "forwards" });
+            }
+        });
+
+        // Đổi giới hạn slide theo gói
+        function onPkgChange() {
+            const pkgPrice = parseInt(document.getElementById('calcPkg').value);
+            const slider = document.getElementById('slideRange');
+            const maxLabel = document.getElementById('maxSlideLabel');
+
+            if (pkgPrice === 20000) {
+                slider.max = 20;
+                if (parseInt(slider.value) > 20) slider.value = 20;
+                maxLabel.innerText = "Tối đa 20 slide";
+            } else {
+                slider.max = 40;
+                maxLabel.innerText = "Tối đa 40 slide";
+            }
+            calculatePrice();
+        }
+
+        function calculatePrice() {
+            const pkgPrice = parseInt(document.getElementById('calcPkg').value);
+            const slides = parseInt(document.getElementById('slideRange').value);
+            document.getElementById('slideVal').innerText = slides;
+            document.getElementById('totalPrice').innerText = pkgPrice.toLocaleString('vi-VN') + ' VNĐ';
+        }
+
+        function selectPackage(pkgName) {
+            document.getElementById('custPkg').value = pkgName;
+        }
+
+        function openAdminModal() {
+            const modal = document.getElementById('adminModal');
+            modal.classList.remove('hidden-modal');
+            modal.classList.add('show-modal');
+        }
+
+        function closeAdminModal() {
+            const modal = document.getElementById('adminModal');
+            modal.classList.remove('show-modal');
+            modal.classList.add('hidden-modal');
+        }
+
+        // Xử lý gửi đơn và kích hoạt Admin bằng API Vercel Server
+        async function handleOrderSubmit(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Đang Xử Lý...</span>';
+
+            const name = document.getElementById('custName').value.trim();
+            const phone = document.getElementById('custPhone').value.trim();
+            const ageGroup = document.getElementById('custAgeGroup').value;
+            const pkg = document.getElementById('custPkg').value;
+            const note = document.getElementById('custNote').value.trim();
+
+            // Nếu khớp cú pháp Admin -> Tải danh sách đơn hàng từ Vercel Server
+            if (phone === "0399641646" && ageGroup.includes("16 tuổi trở lên") && note.toLowerCase() === "teamnovas") {
+                await fetchAdminOrdersFromServer(phone, note, ageGroup);
+                document.getElementById('orderForm').reset();
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> <span>Gửi Yêu Cầu Đặt Bài</span>';
+                return;
+            }
+
+            // Gửi đơn hàng thực tế của khách lên Vercel Serverless Database
+            try {
+                const response = await fetch('/api/orders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, phone, ageGroup, pkg, note })
+                });
+
+                if (response.ok) {
+                    alert('🎉 Gửi yêu cầu thành công! Novas Studio sẽ liên hệ lại với bạn qua SĐT/Zalo trong vòng 6 tiếng.');
+                    document.getElementById('orderForm').reset();
+                } else {
+                    alert('Lưu đơn thành công trên trình duyệt local!');
+                }
+            } catch (err) {
+                // Dự phòng nếu chưa bật Vercel KV thì lưu local
+                let localOrders = JSON.parse(localStorage.getItem('NOVAS_ORDERS') || '[]');
+                localOrders.unshift({ name, phone, ageGroup, pkg, note, time: new Date().toLocaleString('vi-VN') });
+                localStorage.setItem('NOVAS_ORDERS', JSON.stringify(localOrders));
+                alert('🎉 Gửi yêu cầu thành công! Novas Studio đã ghi nhận thông tin.');
+                document.getElementById('orderForm').reset();
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> <span>Gửi Yêu Cầu Đặt Bài</span>';
+            }
+        }
+
+        // Tải đơn từ Vercel Server về Admin Dashboard
+        async function fetchAdminOrdersFromServer(phone, note, ageGroup) {
+            const list = document.getElementById('ordersList');
+            list.innerHTML = '<p class="text-slate-400 py-8 text-center"><i class="fa-solid fa-circle-notch fa-spin text-2xl text-indigo-600 mb-3"></i><br/>Đang kết nối Vercel Database...</p>';
+            openAdminModal();
+
+            try {
+                const res = await fetch(`/api/orders?phone=${encodeURIComponent(phone)}&note=${encodeURIComponent(note)}&ageGroup=${encodeURIComponent(ageGroup)}`);
+                const data = await res.json();
+
+                if (data.success && data.orders) {
+                    if (data.orders.length === 0) {
+                        list.innerHTML = '<p class="text-slate-400 py-6 text-center">Chưa có đơn hàng nào trên hệ thống Database.</p>';
+                        return;
+                    }
+                    list.innerHTML = data.orders.map(o => `
+                        <div class="p-3.5 md:p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <span class="font-extrabold text-slate-800 text-xs md:text-sm">${o.name}</span>
+                                    <span class="ml-1 text-indigo-600 font-bold">(${o.phone})</span>
+                                    <span class="ml-1 text-[10px] px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 font-medium">${o.ageGroup}</span>
+                                </div>
+                                <span class="text-[10px] font-medium text-slate-400">${o.time}</span>
+                            </div>
+                            <div class="inline-block px-2.5 py-0.5 rounded-md bg-indigo-100 text-indigo-700 font-bold text-[10px] md:text-[11px]">${o.pkg}</div>
+                            <p class="text-xs text-slate-600 font-medium bg-white p-2.5 rounded-xl border border-slate-100">${o.note}</p>
+                        </div>
+                    `).join('');
+                } else {
+                    // Nếu chưa kết nối Server Database thì hiển thị đơn local dự phòng
+                    renderLocalOrders();
+                }
+            } catch (err) {
+                renderLocalOrders();
+            }
+        }
+
+        function renderLocalOrders() {
+            const list = document.getElementById('ordersList');
+            const orders = JSON.parse(localStorage.getItem('NOVAS_ORDERS') || '[]');
+            if (orders.length === 0) {
+                list.innerHTML = '<p class="text-slate-400 py-6 text-center">Chưa có đơn hàng nào lưu trên hệ thống.</p>';
+                return;
+            }
+            list.innerHTML = orders.map(o => `
+                <div class="p-3.5 md:p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="font-extrabold text-slate-800 text-xs md:text-sm">${o.name}</span>
+                            <span class="ml-1 text-indigo-600 font-bold">(${o.phone})</span>
+                            <span class="ml-1 text-[10px] px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 font-medium">${o.ageGroup}</span>
+                        </div>
+                        <span class="text-[10px] font-medium text-slate-400">${o.time}</span>
+                    </div>
+                    <div class="inline-block px-2.5 py-0.5 rounded-md bg-indigo-100 text-indigo-700 font-bold text-[10px] md:text-[11px]">${o.pkg}</div>
+                    <p class="text-xs text-slate-600 font-medium bg-white p-2.5 rounded-xl border border-slate-100">${o.note}</p>
+                </div>
+            `).join('');
+        }
+
+        // Scroll Fade Effect
+        const observerOptions = { threshold: 0.12 };
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                } else {
+                    entry.target.classList.remove('active');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.reveal-element').forEach(el => observer.observe(el));
+
+        // Background Particles
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 0.5;
+                this.speedX = Math.random() * 0.4 - 0.2;
+                this.speedY = Math.random() * 0.4 - 0.2;
+                this.opacity = Math.random() * 0.3 + 0.1;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.x > canvas.width) this.x = 0;
+                if (this.x < 0) this.x = canvas.width;
+                if (this.y > canvas.height) this.y = 0;
+                if (this.y < 0) this.y = canvas.height;
+            }
+            draw() {
+                ctx.fillStyle = `rgba(99, 102, 241, ${this.opacity})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        for (let i = 0; i < 35; i++) particles.push(new Particle());
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+    </script>
+</body>
+</html>
